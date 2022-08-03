@@ -39,7 +39,7 @@ jobs:
     - shell: bash
       run: copy openssl/applink.c
         mkdir D:\a\stunnel\src\openssl
-        copy D:\a\stunnel\stunnel\src\vcpkg_installed\x64-windows-static\x64-windows-static\include\applink.c openssl\applink.c
+        cp D:\a\stunnel\stunnel\src\vcpkg_installed\x64-windows-static\x64-windows-static\include\applink.c openssl\applink.c
         
     - name: Build
       working-directory: ${{env.GITHUB_WORKSPACE}}
