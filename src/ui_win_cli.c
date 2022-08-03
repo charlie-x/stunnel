@@ -35,6 +35,8 @@
  *   forward this exception.
  */
 
+#pragma comment(lib,"ws2_32.lib")
+
 #include "prototypes.h"
 
 int main(int argc, char *argv[]) {
