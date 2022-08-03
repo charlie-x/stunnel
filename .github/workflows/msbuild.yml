@@ -38,7 +38,7 @@ jobs:
       
     - shell: cmd
       run: |
-        mkdir D:\a\stunnel\src\openssl
+        mkdir D:\a\stunnel\stunnel\src\openssl
         copy D:\a\stunnel\stunnel\src\vcpkg_installed\x64-windows-static\x64-windows-static\include\applink.c openssl\applink.c
         
     - name: Build
