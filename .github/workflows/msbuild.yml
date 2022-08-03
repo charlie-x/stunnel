@@ -28,18 +28,15 @@ jobs:
     - name: Add MSBuild to PATH
       uses: microsoft/setup-msbuild@v1.0.2
 
-    - name: Restore NuGet packages
-      working-directory: ${{env.GITHUB_WORKSPACE}}
-      run: nuget restore ${{env.SOLUTION_FILE_PATH}}
-    
     - name: Restore vcpkg packages
       working-directory: ${{env.GITHUB_WORKSPACE}}
       run: vcpkg integrate install
       
     - shell: cmd
       run: |
-        mkdir D:\a\stunnel\stunnel\src\openssl
-        copy D:\a\stunnel\stunnel\src\vcpkg_installed\x64-windows-static\x64-windows-static\include\applink.c openssl\applink.c
+        echo %VCPKG_ROOT%
+        rem mkdir D:\a\stunnel\stunnel\src\openssl
+        rem copy D:\a\stunnel\stunnel\src\vcpkg_installed\x64-windows-static\x64-windows-static\include\applink.c openssl\applink.c
         
     - name: Build
       working-directory: ${{env.GITHUB_WORKSPACE}}
