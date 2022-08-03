@@ -49,4 +49,4 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
          name: stunnel.exe
-         path: D:\a\stunnel\stunnel\build\stunnel.exe
+         path: D:\a\stunnel\stunnel\src\x64\Release\stunnel.exe
