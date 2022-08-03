@@ -36,10 +36,10 @@ jobs:
       working-directory: ${{env.GITHUB_WORKSPACE}}
       run: vcpkg integrate install
       
-    - shell: bash
+    - shell: cmd
       run: |
         mkdir D:\a\stunnel\src\openssl
-        cp D:\a\stunnel\stunnel\src\vcpkg_installed\x64-windows-static\x64-windows-static\include\applink.c openssl\applink.c
+        copy D:\a\stunnel\stunnel\src\vcpkg_installed\x64-windows-static\x64-windows-static\include\applink.c openssl\applink.c
         
     - name: Build
       working-directory: ${{env.GITHUB_WORKSPACE}}
