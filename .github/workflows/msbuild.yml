@@ -37,7 +37,7 @@ jobs:
       run: vcpkg integrate install
       
     - shell: bash
-      run: copy openssl/applink.c
+      run: |
         mkdir D:\a\stunnel\src\openssl
         cp D:\a\stunnel\stunnel\src\vcpkg_installed\x64-windows-static\x64-windows-static\include\applink.c openssl\applink.c
         
