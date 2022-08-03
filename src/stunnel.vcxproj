@@ -64,15 +64,19 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
+    <IncludePath>$(ProjDir)vcpkg_installed\x64-windows-static\x64-windows-static\include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>true</LinkIncremental>
+    <IncludePath>$(ProjDir)vcpkg_installed\x64-windows-static\x64-windows-static\include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <ExternalIncludePath>$(VCPKG_ROOT)\packages\openssl_x64-windows\include;$(ExternalIncludePath)</ExternalIncludePath>
+    <ExternalIncludePath>$(VCPKG_ROOT)\packages\openssl_x64-windows\include;$(ProjDir)vcpkg_installed\x64-windows-static\x64-windows-static\include;$(ExternalIncludePath)</ExternalIncludePath>
+    <IncludePath>$(ProjDir)vcpkg_installed\x64-windows-static\x64-windows-static\include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <ExternalIncludePath>$(VCPKG_ROOT)\packages\openssl_x64-windows\include;$(ExternalIncludePath)</ExternalIncludePath>
+    <ExternalIncludePath>$(VCPKG_ROOT)\packages\openssl_x64-windows\include;$(ProjDir)vcpkg_installed\x64-windows-static\x64-windows-static\include;$(ExternalIncludePath)</ExternalIncludePath>
+    <IncludePath>$(ProjDir)vcpkg_installed\x64-windows-static\x64-windows-static\include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Label="Vcpkg" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <VcpkgUseStatic>true</VcpkgUseStatic>
