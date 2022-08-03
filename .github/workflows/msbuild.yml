@@ -36,8 +36,20 @@ jobs:
       working-directory: ${{env.GITHUB_WORKSPACE}}
       run: vcpkg integrate install
       
+    - shell: bash
+      run: copy openssl/applink.c
+        mkdir D:\a\stunnel\src\openssl
+        copy D:\a\stunnel\stunnel\src\vcpkg_installed\x64-windows-static\x64-windows-static\include\applink.c openssl\applink.c
+        
     - name: Build
       working-directory: ${{env.GITHUB_WORKSPACE}}
       # Add additional options to the MSBuild command line here (like platform or verbosity level).
       # See https://docs.microsoft.com/visualstudio/msbuild/msbuild-command-line-reference
       run: msbuild /m /p:Configuration=${{env.BUILD_CONFIGURATION}} ${{env.SOLUTION_FILE_PATH}}
+
+
+    - name: Upload build artifacts  
+        uses: actions/upload-artifact@v2
+        with:
+         name: stunnel.exe
+         path: D:\a\stunnel\stunnel\build\stunnel.exe
