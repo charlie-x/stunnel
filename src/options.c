@@ -1476,7 +1476,7 @@ NOEXPORT const char *parse_service_option(CMD cmd, SERVICE_OPTIONS **section_ptr
     /* cert */
     switch(cmd) {
     case CMD_SET_DEFAULTS:
-        section->cert=NULL;
+        section->cert = NULL;
         break;
     case CMD_SET_COPY:
         section->cert=str_dup_detached(new_service_options.cert);
@@ -1499,9 +1499,11 @@ NOEXPORT const char *parse_service_option(CMD cmd, SERVICE_OPTIONS **section_ptr
         if(section->engine)
             break;
 #endif /* !defined(OPENSSL_NO_ENGINE) */
+#ifndef USE_EMBEDDED_CERTS
         if(!section->option.client && !section->cert)
             return "TLS server needs a certificate";
         break;
+#endif
     case CMD_PRINT_DEFAULTS:
         break; /* no default certificate */
     case CMD_PRINT_HELP:

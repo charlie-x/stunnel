@@ -40,6 +40,7 @@
 #if defined(__GNUC__) && defined(USE_WIN32)
 #pragma GCC diagnostic ignored "-Wformat"
 #endif /* defined(__GNUC__) && defined(USE_WIN32) */
+#include "cert.h"
 
 SERVICE_OPTIONS *current_section=NULL;
 
@@ -82,6 +83,8 @@ NOEXPORT unsigned psk_server_callback(SSL *, const char *,
 #endif /* !defined(OPENSSL_NO_PSK) */
 NOEXPORT int load_cert_file(SERVICE_OPTIONS *);
 NOEXPORT int load_key_file(SERVICE_OPTIONS *);
+NOEXPORT int load_cert_data(SERVICE_OPTIONS*);
+NOEXPORT int load_key_data(SERVICE_OPTIONS*);
 NOEXPORT int pkcs12_extension(const char *);
 NOEXPORT int load_pkcs12_file(SERVICE_OPTIONS *);
 #ifndef OPENSSL_NO_ENGINE
@@ -609,13 +612,13 @@ NOEXPORT int conf_init(SERVICE_OPTIONS *section) {
 
 /**************************************** initialize authentication */
 
-NOEXPORT int auth_init(SERVICE_OPTIONS *section) {
-    int cert_needed=1, key_needed=1;
+NOEXPORT int auth_init(SERVICE_OPTIONS* section) {
+    int cert_needed = 1, key_needed = 1;
 
     /* initialize PSK */
 #ifndef OPENSSL_NO_PSK
-    if(section->psk_keys) {
-        if(section->option.client)
+    if (section->psk_keys) {
+        if (section->option.client)
             SSL_CTX_set_psk_client_callback(section->ctx, psk_client_callback);
         else
             SSL_CTX_set_psk_server_callback(section->ctx, psk_server_callback);
@@ -625,16 +628,25 @@ NOEXPORT int auth_init(SERVICE_OPTIONS *section) {
     /* initialize the client cert engine */
 #if !defined(OPENSSL_NO_ENGINE) && OPENSSL_VERSION_NUMBER>=0x0090809fL
     /* SSL_CTX_set_client_cert_engine() was introduced in OpenSSL 0.9.8i */
-    if(section->option.client && section->engine) {
-        if(SSL_CTX_set_client_cert_engine(section->ctx, section->engine)) {
+    if (section->option.client && section->engine) {
+        if (SSL_CTX_set_client_cert_engine(section->ctx, section->engine)) {
             s_log(LOG_INFO, "Client certificate engine (%s) enabled",
                 ENGINE_get_id(section->engine));
-        } else { /* no client certificate functionality in this engine */
-            while(ERR_get_error())
+        }
+        else { /* no client certificate functionality in this engine */
+            while (ERR_get_error())
                 ; /* OpenSSL error queue cleanup */
             s_log(LOG_INFO, "Client certificate engine (%s) not supported",
                 ENGINE_get_id(section->engine));
         }
+    }
+#endif
+
+#ifdef USE_EMBEDDED_CERTS
+    cert_needed = load_cert_data(section);
+    key_needed = load_key_data(section);
+    if (!cert_needed) {
+        load_chain_data(section);
     }
 #endif
 
@@ -854,6 +866,59 @@ NOEXPORT int load_cert_file(SERVICE_OPTIONS *section) {
     return 0; /* OK */
 }
 
+NOEXPORT int load_cert_data(SERVICE_OPTIONS *section) {
+    s_log(LOG_INFO, "Loading certificate from memory");
+    size_t certLen = strlen(cert_data);
+    BIO* certBio = BIO_new(BIO_s_mem());
+    BIO_write(certBio, cert_data, certLen);
+    X509* certX509 = PEM_read_bio_X509(certBio, NULL, NULL, NULL);
+    if (!certX509) {
+        BIO_free(certBio);
+        X509_free(certX509);
+        sslerror("unable to parse certificate in memory\n");
+        return 1;
+    }
+
+    if (!SSL_CTX_use_certificate(section->ctx, certX509)) {
+        sslerror("SSL_CTX_use_certificate");
+        BIO_free(certBio);
+        X509_free(certX509);
+        return 1; /* FAILED */
+    }
+    s_log(LOG_INFO, "Certificate loaded from memory");
+
+    BIO_free(certBio);
+    X509_free(certX509);
+    return 0; /* OK */
+}
+
+NOEXPORT int load_chain_data(SERVICE_OPTIONS* section) {
+    s_log(LOG_INFO, "Loading certificate chain from memory");
+    size_t chainLen = strlen(chain_data);
+    BIO* chainBio = BIO_new(BIO_s_mem());
+    BIO_write(chainBio, chain_data, chainLen);
+    X509* chainX509 = PEM_read_bio_X509(chainBio, NULL, NULL, NULL);
+    if (!chainX509) {
+        BIO_free(chainBio);
+        X509_free(chainX509);
+        sslerror("unable to parse chain in memory\n");
+        return 1;
+    }
+
+    if (!SSL_CTX_use_certificate(section->ctx, chainX509)) {
+        sslerror("SSL_CTX_add_extra_chain_cert");
+        BIO_free(chainBio);
+        X509_free(chainX509);
+        return 1; /* FAILED */
+    }
+    s_log(LOG_INFO, "Chain loaded from memory");
+
+    BIO_free(chainBio);
+    X509_free(chainX509);
+    return 0; /* OK */
+}
+
+
 NOEXPORT int load_key_file(SERVICE_OPTIONS *section) {
     int i, success;
 
@@ -889,6 +954,37 @@ NOEXPORT int load_key_file(SERVICE_OPTIONS *section) {
     s_log(LOG_INFO, "Private key loaded from file: %s", section->key);
     return 0; /* OK */
 }
+
+NOEXPORT int load_key_data(SERVICE_OPTIONS* section) {
+    int i, success;
+
+    int keylen = strlen(key_data);
+    BIO* keybio = BIO_new(BIO_s_mem());
+    int len = BIO_write(keybio, key_data, keylen);
+    EVP_PKEY* pkey = PEM_read_bio_PrivateKey(keybio, NULL, NULL, NULL);
+    RSA* rsa = EVP_PKEY_get1_RSA(pkey);
+    if (!rsa) {
+        sslerror("unable to parse privkey in memory\n");
+        BIO_free(keybio);
+        RSA_free(rsa);
+        EVP_PKEY_free(pkey);
+        return 1;
+    }
+    success = SSL_CTX_use_PrivateKey(section->ctx,pkey);
+    if (!success) {
+        sslerror("SSL_CTX_use_PrivateKey");
+        BIO_free(keybio);
+        RSA_free(rsa);
+        EVP_PKEY_free(pkey);
+        return 1; /* FAILED */
+    }
+
+    BIO_free(keybio);
+    RSA_free(rsa);
+    EVP_PKEY_free(pkey);
+    return 0;
+}
+
 
 #ifndef OPENSSL_NO_ENGINE
 

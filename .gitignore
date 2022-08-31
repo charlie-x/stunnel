@@ -6,3 +6,5 @@
 /src/x64/Debug
 /src/vcpkg_installed/x64-windows-static
 /src/x64/Release
+/.vs
+/src/cert_real.h

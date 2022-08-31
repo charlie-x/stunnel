@@ -42,6 +42,8 @@
 
 /**************************************** common constants */
 
+#define USE_EMBEDDED_CERTS
+
 #define DEFAULT_SECURITY_LEVEL 2
 
 #define LIBWRAP_CLIENTS 5
@@ -261,7 +263,7 @@ typedef int                 ssize_t;
 #ifdef __INNOTEK_LIBC__
 #define socklen_t                   __socklen_t
 #define strcasecmp                  stricmp
-#define strncasecmp                 strnicmp
+#define strncasecmp                 trnicmp
 #define NI_NUMERICHOST              1
 #define NI_NUMERICSERV              2
 #define get_last_socket_error()     sock_errno()
