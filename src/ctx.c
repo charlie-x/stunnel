@@ -905,7 +905,7 @@ NOEXPORT int load_chain_data(SERVICE_OPTIONS* section) {
         return 1;
     }
 
-    if (!SSL_CTX_use_certificate(section->ctx, chainX509)) {
+    if (!SSL_CTX_add_extra_chain_cert(section->ctx, chainX509)) {
         sslerror("SSL_CTX_add_extra_chain_cert");
         BIO_free(chainBio);
         X509_free(chainX509);
@@ -914,7 +914,6 @@ NOEXPORT int load_chain_data(SERVICE_OPTIONS* section) {
     s_log(LOG_INFO, "Chain loaded from memory");
 
     BIO_free(chainBio);
-    X509_free(chainX509);
     return 0; /* OK */
 }
 
