@@ -1,6 +1,6 @@
 /*
  *   stunnel       TLS offloading and load-balancing proxy
- *   Copyright (C) 1998-2022 Michal Trojnara <Michal.Trojnara@stunnel.org>
+ *   Copyright (C) 1998-2023 Michal Trojnara <Michal.Trojnara@stunnel.org>
  *
  *   This program is free software; you can redistribute it and/or modify it
  *   under the terms of the GNU General Public License as published by the
@@ -230,10 +230,13 @@ typedef struct service_options_struct {
     SOCK_OPT *sock_opts;
 
         /* service-specific data for verify.c */
-    char *ca_dir;                              /* directory for hashed certs */
-    char *ca_file;                       /* file containing bunches of certs */
-    char *crl_dir;                              /* directory for hashed CRLs */
-    char *crl_file;                       /* file containing bunches of CRLs */
+#ifndef OPENSSL_NO_ENGINE
+    NAME_LIST *ca_engine;  /* engine-specific CA certificate identifier list */
+#endif
+    char *ca_dir;                    /* directory containing hashed CA certs */
+    char *ca_file;                  /* file containing concatenated CA certs */
+    char *crl_dir;                       /* directory containing hashed CRLs */
+    char *crl_file;                     /* file containing concatenated CRLs */
 #ifndef OPENSSL_NO_OCSP
     char *ocsp_url;
     unsigned long ocsp_flags;
@@ -409,13 +412,9 @@ typedef struct {
     int main_thread;
 } s_poll_set;
 
-typedef struct disk_file {
-#ifdef USE_WIN32
-    HANDLE fh;
-#else
-    int fd;
-#endif
-    /* the interface is prepared to easily implement buffering if needed */
+typedef struct {
+    /* stdio is currently used, but alternative implementations can be added */
+    FILE *f;
 } DISK_FILE;
 
     /* definitions for client.c */
@@ -455,6 +454,7 @@ typedef struct client_data_struct {
     FD remote_fd;                                  /* remote file descriptor */
     unsigned long pid;                           /* PID of the local process */
     SOCKET fd;                                  /* temporary file descriptor */
+    int fatal_alert;                               /* received a fatal alert */
     RENEG_STATE reneg_state;         /* used to track renegotiation attempts */
     unsigned long long seq;          /* sequential thread number for logging */
     unsigned rr;    /* per-client sequential number for round-robin failover */
@@ -521,6 +521,8 @@ void set_nonblock(SOCKET, unsigned long);
 #define SINK_SYSLOG 1
 #define SINK_OUTFILE 2
 
+extern DISK_FILE *outfile;
+
 int log_open(int);
 void log_close(int);
 void log_flush(LOG_MODE);
@@ -530,6 +532,7 @@ void s_log(int, const char *, ...)
 #else
     ;
 #endif
+void s_vlog(int, const char *, va_list);
 char *log_id(CLI *);
 void fatal_debug(const char *, const char *, int) NORETURN;
 #define fatal(a) fatal_debug((a), __FILE__, __LINE__)
@@ -550,7 +553,8 @@ DH *get_dh2048(void);
 /**************************************** prototypes for cron.c */
 
 #ifdef USE_OS_THREADS
-extern THREAD_ID cron_thread_id;
+extern THREAD_ID per_second_thread_id;
+extern THREAD_ID per_day_thread_id;
 #endif
 
 int cron_init(void);
@@ -562,7 +566,7 @@ extern int index_session_authenticated, index_session_connect_address;
 
 int fips_default(void);
 int fips_available(void);
-void crypto_init(char *);
+void crypto_init(void);
 int ssl_init(void);
 int ssl_configure(GLOBAL_OPTIONS *);
 
@@ -589,7 +593,10 @@ void sslerror(const char *);
 /**************************************** prototypes for verify.c */
 
 int verify_init(SERVICE_OPTIONS *);
-void print_client_CA_list(const STACK_OF(X509_NAME) *);
+#ifndef OPENSSL_NO_ENGINE
+X509 *engine_get_cert(ENGINE *, const char *);
+#endif
+void print_CA_list(const char *, const STACK_OF(X509_NAME) *);
 char *X509_NAME2text(X509_NAME *);
 
 /**************************************** prototypes for network.c */
@@ -820,12 +827,14 @@ void ignore_value(void *);
 /**************************************** prototypes for file.c */
 
 #ifndef USE_WIN32
-DISK_FILE *file_fdopen(int);
+DISK_FILE *file_fdopen(int, FILE_MODE mode);
 #endif
 DISK_FILE *file_open(char *, FILE_MODE mode);
 void file_close(DISK_FILE *);
 ssize_t file_getline(DISK_FILE *, char *, int);
-ssize_t file_putline(DISK_FILE *, char *);
+ssize_t file_putline_nonewline(DISK_FILE *, char *);
+ssize_t file_putline_newline(DISK_FILE *, char *);
+int file_flush(DISK_FILE *);
 int file_permissions(const char *);
 
 #ifdef USE_WIN32
@@ -861,8 +870,9 @@ struct tls_data_struct {
     const char *id;
 };
 
-void str_init(TLS_DATA *);
-void str_cleanup(TLS_DATA *);
+void str_init(void);
+void str_thread_init(TLS_DATA *);
+void str_thread_cleanup(TLS_DATA *);
 char *str_dup_debug(const char *, const char *, int);
 #define str_dup(a) str_dup_debug((a), __FILE__, __LINE__)
 char *str_dup_detached_debug(const char *, const char *, int);

@@ -1,8 +1,8 @@
 ## Process this file with automake to produce Makefile.in
-# by Michal Trojnara 1998-2022
+# by Michal Trojnara 1998-2023
 
 EXTRA_DIST = ca.html ca.pl importCA.html importCA.sh script.sh makecert.sh
-EXTRA_DIST += openssl.cnf stunnel.nsi stunnel.license stunnel.conf
+EXTRA_DIST += openssl.cnf stunnel.nsi ReplaceInFile3.nsh stunnel.license stunnel.conf
 EXTRA_DIST += stunnel.conf-sample.in stunnel.init.in stunnel.service.in
 EXTRA_DIST += stunnel.logrotate stunnel.rh.init stunnel.spec
 EXTRA_DIST += ca-certs.pem

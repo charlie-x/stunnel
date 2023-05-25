@@ -1,5 +1,5 @@
 ## Process this file with automake to produce Makefile.in
-# by Michal Trojnara 1998-2022
+# by Michal Trojnara 1998-2023
 
 AM_DISTCHECK_CONFIGURE_FLAGS = --with-bashcompdir='$$(datarootdir)/bash-completion/completions'
 
@@ -16,7 +16,7 @@ doc_DATA = README.md TODO.md COPYING.md AUTHORS.md NEWS.md
 doc_DATA += PORTS.md BUGS.md COPYRIGHT.md CREDITS.md
 doc_DATA += INSTALL.W32.md INSTALL.WCE.md INSTALL.FIPS.md
 
-EXTRA_DIST = .travis.yml $(doc_DATA)
+EXTRA_DIST = .travis.yml makedh.sh $(doc_DATA)
 
 distcleancheck_listfiles = find . -type f -exec sh -c 'test -f $(srcdir)/{} || echo {}' ';'
 

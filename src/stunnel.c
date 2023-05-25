@@ -1,6 +1,6 @@
 /*
  *   stunnel       TLS offloading and load-balancing proxy
- *   Copyright (C) 1998-2022 Michal Trojnara <Michal.Trojnara@stunnel.org>
+ *   Copyright (C) 1998-2023 Michal Trojnara <Michal.Trojnara@stunnel.org>
  *
  *   This program is free software; you can redistribute it and/or modify it
  *   under the terms of the GNU General Public License as published by the
@@ -266,15 +266,19 @@ NOEXPORT void terminate_threads() {
     threads=0;
     for(c=thread_head; c; c=c->thread_next) /* count client threads */
         threads++;
-    thread_list=str_alloc((threads+1)*sizeof(THREAD_ID));
+    thread_list=str_alloc((threads+2)*sizeof(THREAD_ID));
     i=0;
     for(c=thread_head; c; c=c->thread_next) { /* copy client threads */
         thread_list[i++]=c->thread_id;
         s_log(LOG_DEBUG, "Terminating a thread for [%s]", c->opt->servname);
     }
-    if(cron_thread_id) { /* append cron_thread_id if used */
-        thread_list[threads++]=cron_thread_id;
-        s_log(LOG_DEBUG, "Terminating the cron thread");
+    if(per_second_thread_id) { /* append per_second_thread_id if used */
+        thread_list[threads++]=per_second_thread_id;
+        s_log(LOG_DEBUG, "Terminating the per-second thread");
+    }
+    if(per_day_thread_id) { /* append per_day_thread_id if used */
+        thread_list[threads++]=per_day_thread_id;
+        s_log(LOG_DEBUG, "Terminating the per-day thread");
     }
     CRYPTO_THREAD_unlock(stunnel_locks[LOCK_THREAD_LIST]);
 
@@ -361,6 +365,7 @@ void daemon_loop(void) {
         s_log(LOG_CRIT, "Failed to start exec+connect services");
         exit(1);
     }
+    s_log(LOG_INFO, "Accepting new connections");
     while(1) {
         int temporary_lack_of_resources=0;
         int num=s_poll_wait(fds, -1, -1);
@@ -588,7 +593,7 @@ NOEXPORT int bind_ports(void) {
             s_log(LOG_DEBUG, "Skipped exec+connect service [%s]", opt->servname);
 #ifndef OPENSSL_NO_TLSEXT
         } else if(!opt->option.client && opt->sni) {
-            s_log(LOG_DEBUG, "Skipped SNI slave service [%s]", opt->servname);
+            s_log(LOG_DEBUG, "Skipped SNI secondary service [%s]", opt->servname);
 #endif
         } else { /* each service must define two endpoints */
             s_log(LOG_ERR, "Invalid service [%s]", opt->servname);
