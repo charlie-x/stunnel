@@ -46,7 +46,8 @@ jobs:
 
 
     - name: Upload build artifacts  
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
-         name: stunnel.exe
-         path: D:\a\stunnel\stunnel\src\x64\Release\stunnel.exe
+         path: stunnel.exe
+         pattern: D:\a\stunnel\stunnel\src\x64\Release\stunnel.exe
+         merge-multiple: true
